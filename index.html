@@ -77,15 +77,14 @@
             resize: vertical;
         }
 
-
         button {
             background-color: var(--primary-color);
             color: white;
             border: none;
-            padding: 6px 12px;
+            padding: 9px 3px;
             border-radius: var(--border-radius);
             cursor: pointer;
-            font-size: 16px;
+            font-size: 11px;
             transition: background-color 0.3s;
         }
 
@@ -290,8 +289,8 @@
         .task-actions {
             display: flex;
             justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 10px;
+            gap: 8px;
+            margin-bottom: 2px;
             flex-direction: row-reverse;
         }
 
@@ -659,10 +658,15 @@
 
         /* Indicador visual para cronogramas recolhidos */
         .task-item.collapsed .task-info::after {
-            content: " • Clique em 'Expandir' para ver os passos";
+            content: " •Expanda para ver os passos";
             color: #6c757d;
             font-style: italic;
             font-size: 12px;
+        }
+
+        mark {
+            background-color: yellow;
+            border-radius: 2px;
         }
     </style>
 </head>
@@ -803,15 +807,20 @@
             let recognition = null;
             let isRecording = false;
             let isFirstAudioInput = true;
+
             // Variáveis para síntese de voz (leitura)
             let speechSynthesis = window.speechSynthesis;
             let currentUtterance = null;
+            let currentTaskId = null;
+            let isPaused = false;
             let isReading = false;
             let currentReadingTaskId = null;
+            let tasks = [];
+
+
             // Adicionar no início do script, junto com as outras variáveis
             let isEditModalFirstAudioInput = true;
             let isEditModalRecording = false;
-
 
             // Abrir conexão com o banco de dados
             const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -1253,13 +1262,58 @@
                 audioStatus.className = 'audio-status';
             }
             // Funções para síntese de voz (leitura)
+            // function toggleReadTask(taskId) {
+            //     if (isReading && currentReadingTaskId === taskId) {
+            //         stopReading();
+            //     } else {
+            //         startReadingTask(taskId);
+            //     }
+            // }
             function toggleReadTask(taskId) {
-                if (isReading && currentReadingTaskId === taskId) {
-                    stopReading();
+                if (!checkSpeechSynthesisSupport()) return;
+
+                const task = tasks.find(t => t.id === taskId); // Pegamos a task pelo ID
+                if (!task) return;
+
+                const textToRead = `${task.name}. ${task.steps.map(s => s.text).join('. ')}`;
+
+                // Se está lendo esta tarefa
+                if (speechSynthesis.speaking && currentTaskId === taskId) {
+                    if (!isPaused) {
+                        // Pausar leitura
+                        speechSynthesis.pause();
+                        isPaused = true;
+                        updateReadButton(taskId, false); // Mostrar "🔊 Ler"
+                    } else {
+                        // Continuar leitura
+                        speechSynthesis.resume();
+                        isPaused = false;
+                        updateReadButton(taskId, true); // Mostrar "⏸️ Parar"
+                    }
                 } else {
-                    startReadingTask(taskId);
+                    // Se estava lendo outra tarefa, cancela
+                    if (speechSynthesis.speaking) {
+                        speechSynthesis.cancel();
+                    }
+
+                    // Começar nova leitura
+                    currentUtterance = new SpeechSynthesisUtterance(textToRead);
+                    currentTaskId = taskId;
+                    isPaused = false;
+                    updateReadButton(taskId, true); // Mostrar "⏸️ Parar"
+
+                    // Quando terminar, resetar botão
+                    currentUtterance.onend = () => {
+                        updateReadButton(taskId, false);
+                        currentTaskId = null;
+                        currentUtterance = null;
+                        isPaused = false;
+                    };
+
+                    speechSynthesis.speak(currentUtterance);
                 }
             }
+
 
             function startReadingTask(taskId) {
                 // Parar qualquer leitura em andamento
@@ -1372,7 +1426,7 @@
 
                     if (isCurrentlyReading) {
                         readBtn.classList.add('reading');
-                        btnText.textContent = '⏸️ Parar';
+                        btnText.textContent = '⏸️ Pausa';
                     } else {
                         readBtn.classList.remove('reading');
                         btnText.textContent = '🔊 Ler';
@@ -1387,6 +1441,7 @@
                 }
                 return true;
             }
+
 
             // Funçao para criar novo cronograma
             function createTask() {
@@ -1589,22 +1644,68 @@
 
 
                 request.onsuccess = (event) => {
-                    const tasks = event.target.result;
+                    tasks = event.target.result;
 
-
-                    // Aplicar filtro de pesquisa
                     // Aplicar filtro de pesquisa (apenas no título)
-                    const searchValue = normalizeText(searchInput.value.trim());
+                    // Função genérica para busca normalizada
+                    /**
+                     * Filtra e destaca palavras buscadas em uma lista de objetos.
+                     *
+                     * @param {Array} items - Lista original de objetos.
+                     * @param {String} searchQuery - Texto digitado na busca.
+                     * @param {Function} fieldAccessor - Função que retorna o campo de texto a ser pesquisado.
+                     * @param {Boolean} highlight - Se verdadeiro, adiciona destaque nas palavras encontradas.
+                     * @returns {Array} - Lista de objetos com os campos filtrados e (opcionalmente) destacados.
+                     */
+                    function filterByNormalizedSearch(items, searchQuery, fieldAccessor, highlight = false) {
+                        const normalizeText = (text) => {
+                            return text
+                                .normalize("NFD")
+                                .replace(/[\u0300-\u036f]/g, "")
+                                .toLowerCase();
+                        };
 
-                    filteredTasks = tasks.filter(task => {
-                        if (!searchValue) return true;
+                        const escapeRegExp = (string) => {
+                            return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+                        };
 
-                        const normalizedTitle = normalizeText(task.name);
-                        const searchWords = searchValue.split(/\s+/); // divide a busca em palavras
+                        const normalizedQuery = normalizeText(searchQuery.trim());
+                        if (!normalizedQuery) return items.map(item => ({ ...item, highlighted: fieldAccessor(item) }));
 
-                        // Verifica se TODAS as palavras existem no mesmo título
-                        return searchWords.every(word => normalizedTitle.includes(word));
-                    });
+                        const queryWords = normalizedQuery.split(/\s+/);
+
+                        return items
+                            .filter(item => {
+                                const normalizedField = normalizeText(fieldAccessor(item));
+                                return queryWords.every(word => normalizedField.includes(word));
+                            })
+                            .map(item => {
+                                if (!highlight) return { ...item, highlighted: fieldAccessor(item) };
+
+                                const originalText = fieldAccessor(item);
+                                let highlightedText = originalText;
+
+                                queryWords.forEach(word => {
+                                    const regex = new RegExp(`(${escapeRegExp(word)})`, 'gi');
+
+                                    // Destacar palavra ignorando acentos e maiúsculas
+                                    highlightedText = highlightedText.replace(/([\wÀ-ÿ]+)/g, (match) => {
+                                        const normalizedMatch = normalizeText(match);
+                                        return queryWords.includes(normalizedMatch)
+                                            ? `<mark>${match}</mark>` : match;
+                                    });
+                                });
+
+                                return { ...item, highlighted: highlightedText };
+                            });
+                    }
+
+
+                    // Chamada no seu fluxo principal (dentro do listener ou função loadTasks)
+                    const searchValue = searchInput.value.trim();
+                    filteredTasks = filterByNormalizedSearch(tasks, searchValue, task => task.name, true);
+                    renderTasksWithPagination();
+
 
 
 
@@ -1667,11 +1768,12 @@
 
 
                     // Exibir mensagem se nenhuma tarefa for encontrada com o filtro atual
-                    if (filteredTasks.length === 0 && searchValue) {
-                        taskList.innerHTML = `<p style="text-align: center; margin-top: 20px;">Nenhum cronograma encontrado para "${searchValue}". Tente outra pesquisa.</p>`;
-                    } else if (filteredTasks.length === 0) {
+                    if (tasks.length === 0 && searchValue) {
+                        taskList.innerHTML = `<p style="text-align: center; margin-top: 20px;">Nenhum cronograma encontrado para "<strong>${searchValue}</strong>". Tente outra pesquisa.</p>`;
+                    } else if (tasks.length === 0) {
                         taskList.innerHTML = '<p style="text-align: center; margin-top: 20px;">Nenhum cronograma encontrado. Crie um novo usando o formulário acima.</p>';
                     }
+
                 };
 
 
@@ -1682,7 +1784,7 @@
             }
 
 
-            function renderTasks(tasks) {
+            function renderTasks(tasks, searchValue = '') {
                 taskList.innerHTML = '';
 
                 if (tasks.length === 0) {
@@ -1703,13 +1805,18 @@
                     taskElement.innerHTML = `
             <div class="task-actions">
                 <button class="delete-task-btn danger" data-taskid="${task.id}">Excluir</button>
+                <button onclick="resetTaskSteps('${task.id}')" class="reset-btn">Resetar</button>
                 <button class="edit-task-btn" data-taskid="${task.id}">Editar</button>
                 <button class="read-task-btn" data-taskid="${task.id}">
                     <span class="read-btn-text">🔊 Ler</span>
                 </button>
+                <button class="step-read-btn" data-taskid="${task.id}">
+                    <span class="read-btn-text">🔁 Executar</span>
+                </button>
+
             </div>
             <div class="task-content">
-                <div class="task-name">${task.name}</div>
+                <div class="task-name">${task.highlighted || task.name}</div>
                 <div class="task-progress">
                     <div class="progress-bar" style="width: ${progressPercentage}%"></div>
                 </div>
@@ -1753,10 +1860,13 @@
                     const editBtn = taskElement.querySelector('.edit-task-btn');
                     const deleteBtn = taskElement.querySelector('.delete-task-btn');
                     const readBtn = taskElement.querySelector('.read-task-btn');
+                    const stepReadBtn = taskElement.querySelector('.step-read-btn');
 
                     editBtn.addEventListener('click', () => openEditModal(task.id));
                     deleteBtn.addEventListener('click', () => deleteTask(task.id));
                     readBtn.addEventListener('click', () => toggleReadTask(task.id));
+                    stepReadBtn.addEventListener('click', () => readAndCheckNextStep(task.id));
+
 
                     // NOVO: Event listener para o botão de expandir
                     const expandBtn = taskElement.querySelector('.expand-btn');
@@ -2228,11 +2338,90 @@
                     stopReading();
                 }
             });
-            function normalizeText(text) {
-                return text
-                    .normalize("NFD")                 // separa acentos
-                    .replace(/[\u0300-\u036f]/g, "")  // remove acentos
-                    .toLowerCase();                   // tudo minúsculo
+            function readAndCheckNextStep(taskId) {
+                if (!checkSpeechSynthesisSupport()) return;
+
+                const taskElement = document.querySelector(`[data-taskid="${taskId}"]`).closest('.task-item');
+                if (!taskElement) return;
+
+                const taskTitle = taskElement.querySelector('.task-name')?.textContent || '';
+                const checkboxes = taskElement.querySelectorAll('.task-step-checkbox');
+
+                // Obter os passos ainda não concluídos
+                const uncheckedSteps = Array.from(checkboxes).filter(cb => !cb.checked);
+
+                // Se não houver mais etapas, parar
+                if (uncheckedSteps.length === 0) {
+                    alert('Todos os passos já foram concluídos!');
+                    return;
+                }
+
+                // Obter o primeiro passo pendente
+                const currentStepCheckbox = uncheckedSteps[0];
+                const stepText = currentStepCheckbox.closest('.task-step').querySelector('.step-content')?.textContent || '';
+
+                // Montar o texto que será lido: se for a primeira vez, ler o título também
+                const isFirstStep = uncheckedSteps.length === checkboxes.length;
+                const fullText = isFirstStep ? `${taskTitle}. ${stepText}` : stepText;
+
+                // Criar e falar
+                const utterance = new SpeechSynthesisUtterance(fullText);
+                utterance.onend = () => {
+                    // Marcar o checkbox após leitura
+                    currentStepCheckbox.checked = true;
+
+                    // Você pode também disparar o evento de alteração, se tiver lógica atrelada
+                    currentStepCheckbox.dispatchEvent(new Event('change'));
+
+                    // Pausar após concluir este passo — leitura só continua com outro clique
+                };
+
+                speechSynthesis.cancel(); // Cancela qualquer leitura anterior
+                speechSynthesis.speak(utterance);
+            }
+
+            function resetTaskSteps(taskId) {
+                const taskElement = document.querySelector(`[data-taskid="${taskId}"]`).closest('.task-item');
+                if (!taskElement) return;
+
+                const checkboxes = taskElement.querySelectorAll('.task-step-checkbox');
+
+                checkboxes.forEach(cb => {
+                    cb.checked = false;
+                    cb.dispatchEvent(new Event('change')); // caso tenha lógica atrelada
+                });
+            }
+            function renderTasksWithPagination() {
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = startIndex + pageSize;
+                const tasksToShow = filteredTasks.slice(startIndex, endIndex);
+
+                renderTasks(tasksToShow);
+                updatePaginationControls();
+            }
+
+            function updatePaginationControls() {
+                const totalPages = Math.ceil(filteredTasks.length / pageSize);
+
+                // Atualizar controles de paginação no DOM
+                const paginationElement = document.getElementById('pagination-controls');
+                if (paginationElement) {
+                    paginationElement.innerHTML = `
+            <button onclick="goToPage(1)" ${currentPage === 1 ? 'disabled' : ''}>Primeira</button>
+            <button onclick="goToPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''}>Anterior</button>
+            <span>Página ${currentPage} de ${totalPages}</span>
+            <button onclick="goToPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''}>Próxima</button>
+            <button onclick="goToPage(${totalPages})" ${currentPage === totalPages ? 'disabled' : ''}>Última</button>
+        `;
+                }
+            }
+
+            function goToPage(page) {
+                const totalPages = Math.ceil(filteredTasks.length / pageSize);
+                if (page >= 1 && page <= totalPages) {
+                    currentPage = page;
+                    renderTasksWithPagination();
+                }
             }
 
         </script>
