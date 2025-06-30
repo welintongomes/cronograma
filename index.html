@@ -356,13 +356,13 @@
         }
 
 
-.pagination-controls button {
-    padding: 2px 11px;
-    background-color: #5457b2;
-    border: 1px solid #595b98;
-    border-radius: 4px;
-    cursor: pointer;
-}
+        .pagination-controls button {
+            padding: 2px 11px;
+            background-color: #5457b2;
+            border: 1px solid #595b98;
+            border-radius: 4px;
+            cursor: pointer;
+        }
 
 
         .pagination-controls button:hover {
@@ -1594,13 +1594,18 @@
 
                     // Aplicar filtro de pesquisa
                     // Aplicar filtro de pesquisa (apenas no título)
-                    const searchValue = searchInput.value.trim().toLowerCase();
-                    filteredTasks = tasks.filter(task => {
-                        if (!searchValue) return true; // Se não há pesquisa, mostrar todas
+                    const searchValue = normalizeText(searchInput.value.trim());
 
-                        // Pesquisar APENAS por nome da tarefa
-                        return task.name.toLowerCase().includes(searchValue);
+                    filteredTasks = tasks.filter(task => {
+                        if (!searchValue) return true;
+
+                        const normalizedTitle = normalizeText(task.name);
+                        const searchWords = searchValue.split(/\s+/); // divide a busca em palavras
+
+                        // Verifica se TODAS as palavras existem no mesmo título
+                        return searchWords.every(word => normalizedTitle.includes(word));
                     });
+
 
 
                     // Ordenar tarefas (mantendo a mesma lógica existente)
@@ -2223,6 +2228,13 @@
                     stopReading();
                 }
             });
+            function normalizeText(text) {
+                return text
+                    .normalize("NFD")                 // separa acentos
+                    .replace(/[\u0300-\u036f]/g, "")  // remove acentos
+                    .toLowerCase();                   // tudo minúsculo
+            }
+
         </script>
 </body>
 
