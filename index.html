@@ -215,7 +215,7 @@
             background-color: rgba(0, 0, 0, 0.5);
             justify-content: center;
             align-items: center;
-            z-index: 1000;
+            z-index: 10002;
         }
 
 
@@ -688,11 +688,12 @@
             /* força o ocultamento padrão */
         }
 
-        .botoesExpandir {
-            gap: 10px;
-            display: flex;
-            justify-content: flex-start;
-        }
+.botoesExpandir {
+    gap: 10px;
+    display: flex;
+    flex-direction: column-reverse;
+    flex-wrap: wrap;
+}
 
         #toggleContainerBtn {
             display: none;
@@ -701,57 +702,194 @@
         #resetGuideBtn {
             display: none;
         }
+        /* Modal de imagem */
+.image-modal {
+    display: none;
+    position: fixed;
+    z-index: 10000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(5px);
+}
+
+.image-modal-content {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: auto;
+}
+
+.modal-image {
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5);
+    cursor: grab;
+    transition: transform 0.2s ease;
+}
+
+.modal-image:active {
+    cursor: grabbing;
+}
+
+.image-modal-close {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: #fff;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 10001;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.image-modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+}
+
+.image-modal-info {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #fff;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+
 
         @media (max-width: 768px) {
             #createTaskBtn {
-    position: fixed;
-    bottom: 34%;
-    right: 92%;
-    z-index: 1000;
-    padding: 4px 5px;
-    background-color: #2b8a3e;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
+                position: fixed;
+                bottom: 51.1%;
+                right: 92.1%;
+                z-index: 1000;
+                padding: 29px 7.3px;
+                background-color: #2b8a3e;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            }
 
-#audioBtn {
-    position: fixed;
-    bottom: 39%;
-    right: 92%;
-    z-index: 1000;
-    padding: 0px 0px;
-    background-color: #0d6efd;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-}
+            #audioBtn {
+                position: fixed;
+                bottom: 42%;
+                right: 92%;
+                z-index: 1000;
+                padding: 21px 2px;
+                background-color: #0d6efd;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+            }
 
-            
-#voiceSearchBtn {
-    position: fixed;
-    bottom: 44%;
-    right: 92%;
-    z-index: 9999;
-    padding: 3px 3px;
-    background-color: #6f42c1;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-size: 16px;
-}
-.task-item {
-    background-color: var(--light-color);
-    padding: 0px 0px 0px 0px;
-    border-radius: var(--border-radius);
-    margin-bottom: 10px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
+
+            #voiceSearchBtn {
+                position: fixed;
+                bottom: 31.1%;
+                right: 92%;
+                z-index: 9999;
+                padding: 28px 5px;
+                background-color: #6f42c1;
+                color: white;
+                border: none;
+                border-radius: 8px;
+                cursor: pointer;
+                font-size: 16px;
+            }
+
+            .task-item {
+                background-color: var(--light-color);
+                padding: 0px 0px 0px 0px;
+                border-radius: var(--border-radius);
+                margin-bottom: 10px;
+                display: flex;
+                align-items: stretch;
+            }
+
+            .task-item.expanded {
+                background-color: var(--light-color);
+                padding: 0px 0px 0px 0px;
+                border-radius: var(--border-radius);
+                margin-bottom: 10px;
+                display: flex;
+                align-items: stretch;
+            }
+
+            #searchInput {
+                position: relative;
+                right: -37.4px;
+                display: flex;
+                width: 86.7%;
+                padding: 7px 10px 10px 48px;
+                border-radius: 20px;
+                border: 1px solid #ccc;
+                font-size: 16px;
+            }
+
+            #clearSearchBtn {
+                position: absolute;
+                left: 51px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                color: #999;
+                cursor: pointer;
+                font-size: 16px;
+                display: none;
+            }
+
+            .task-actions {
+                padding: 7px 7px 3px 0px;
+                display: flex;
+                justify-content: flex-start;
+                gap: 8px;
+                margin-bottom: 2px;
+                flex-direction: row-reverse;
+            }
+
+            .task-content {
+                padding: 0px 0px 0px 19px;
+            }
+                .image-modal-close {
+        top: 10px;
+        right: 15px;
+        font-size: 30px;
+        width: 40px;
+        height: 40px;
+    }
+    
+    .image-modal-info {
+        bottom: 10px;
+        font-size: 12px;
+        padding: 8px 16px;
+    }
 
 
 
@@ -886,7 +1024,16 @@
 
             </div>
         </div>
-
+        <!-- Modal para visualizar imagem em tamanho real -->
+<div id="imageModal" class="image-modal">
+    <div class="image-modal-content">
+        <span class="image-modal-close">&times;</span>
+        <img id="modalImage" class="modal-image" alt="Imagem ampliada">
+        <div class="image-modal-info">
+            <p id="modalImageInfo">Clique e arraste para mover • Use a roda do mouse para dar zoom</p>
+        </div>
+    </div>
+</div>
 
         <script>
             // Inicialização do IndexedDB
@@ -2069,7 +2216,7 @@
 
             </div>
             <div class="task-content">
-    ${task.image ? `<div class="task-image"><img src="${task.image}" alt="Imagem do cronograma" style="width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; margin-bottom: 10px;"></div>` : ''}
+                ${task.image ? `<div class="task-image"><img src="${task.image}" alt="Imagem do cronograma" style="width: 100%; max-height: 350px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" onclick="openImageModal('${task.image}', '${task.name}')"></div>` : ''}
     <div class="task-name">${task.highlighted || task.name}</div>
                 <div class="task-progress">
                     <div class="progress-bar" style="width: ${progressPercentage}%"></div>
@@ -2091,11 +2238,10 @@
             Mostrar imagem
         </button>
         <div class="task-image" style="display: none;">
-            <img src="${task.image}" alt="Imagem do cronograma" style="width: 100%; max-height: 600px; object-fit: contain; border-radius: 8px; margin-bottom: 10px;">
+            <img src="${task.image}" alt="Imagem do cronograma" style="width: 100%; max-height: 600px; object-fit: contain; border-radius: 8px; margin-bottom: 10px; cursor: pointer;" onclick="openImageModal('${task.image}', '${task.name}')">
         </div>
     </div>
 ` : ''}
-</div>
                 <!-- Os passos começam ocultos ou expandidos conforme o estado -->
                 <div class="task-steps ${isExpanded ? '' : 'collapsed'}">
                     ${task.steps.map((step, index) => `
@@ -2954,6 +3100,150 @@
             console.log('Dispositivo detectado:', isMobileDevice() ? 'Mobile' : 'Desktop');
             console.log('Pausa após título:', PAUSE_AFTER_TITLE + 'ms');
             console.log('Pausa entre steps:', PAUSE_BETWEEN_STEPS + 'ms');
+
+            // Variáveis para o modal de imagem
+let imageModal = null;
+let modalImage = null;
+let isDragging = false;
+let startX = 0;
+let startY = 0;
+let scrollLeft = 0;
+let scrollTop = 0;
+let scale = 1;
+
+// Inicializar modal de imagem
+function initImageModal() {
+    imageModal = document.getElementById('imageModal');
+    modalImage = document.getElementById('modalImage');
+    
+    // Fechar modal ao clicar no X
+    document.querySelector('.image-modal-close').addEventListener('click', closeImageModal);
+    
+    // Fechar modal ao clicar fora da imagem
+    imageModal.addEventListener('click', function(e) {
+        if (e.target === imageModal) {
+            closeImageModal();
+        }
+    });
+    
+    // Fechar modal com ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && imageModal.style.display === 'block') {
+            closeImageModal();
+        }
+    });
+    
+    // Funcionalidade de arrastar
+    modalImage.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', stopDrag);
+    
+    // Zoom com scroll do mouse
+    modalImage.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? -0.1 : 0.1;
+        scale = Math.max(0.5, Math.min(3, scale + delta));
+        modalImage.style.transform = `scale(${scale})`;
+    });
+    
+    // Touch events para mobile
+    modalImage.addEventListener('touchstart', startTouchDrag);
+    modalImage.addEventListener('touchmove', touchDrag);
+    modalImage.addEventListener('touchend', stopTouchDrag);
+}
+
+// Abrir modal de imagem
+function openImageModal(imageSrc, taskName) {
+    if (!imageModal) {
+        initImageModal();
+    }
+    
+    modalImage.src = imageSrc;
+    imageModal.style.display = 'block';
+    scale = 1;
+    modalImage.style.transform = 'scale(1)';
+    
+    // Resetar posição
+    const content = document.querySelector('.image-modal-content');
+    content.scrollLeft = 0;
+    content.scrollTop = 0;
+    
+    // Atualizar info
+    document.getElementById('modalImageInfo').textContent = 
+        `${taskName} • Clique e arraste para mover • Use a roda do mouse para dar zoom`;
+}
+
+// Fechar modal de imagem
+function closeImageModal() {
+    if (imageModal) {
+        imageModal.style.display = 'none';
+        scale = 1;
+        modalImage.style.transform = 'scale(1)';
+    }
+}
+
+// Iniciar arrastar
+function startDrag(e) {
+    isDragging = true;
+    startX = e.pageX - modalImage.offsetLeft;
+    startY = e.pageY - modalImage.offsetTop;
+    modalImage.style.cursor = 'grabbing';
+}
+
+// Arrastar
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    
+    const content = document.querySelector('.image-modal-content');
+    const x = e.pageX - startX;
+    const y = e.pageY - startY;
+    
+    content.scrollLeft = scrollLeft - (e.pageX - startX);
+    content.scrollTop = scrollTop - (e.pageY - startY);
+}
+
+// Parar arrastar
+function stopDrag() {
+    isDragging = false;
+    modalImage.style.cursor = 'grab';
+}
+
+// Touch drag para mobile
+let touchStartX = 0;
+let touchStartY = 0;
+
+function startTouchDrag(e) {
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+}
+
+function touchDrag(e) {
+    if (e.touches.length === 1) {
+        e.preventDefault();
+        const content = document.querySelector('.image-modal-content');
+        const deltaX = touchStartX - e.touches[0].clientX;
+        const deltaY = touchStartY - e.touches[0].clientY;
+        
+        content.scrollLeft += deltaX;
+        content.scrollTop += deltaY;
+        
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+    }
+}
+
+function stopTouchDrag() {
+    // Touch drag finished
+}
+
+// Inicializar quando a página carregar
+document.addEventListener('DOMContentLoaded', function() {
+    // Suas outras inicializações aqui...
+    
+    // Inicializar modal de imagem
+    setTimeout(initImageModal, 100);
+});
 
         </script>
 </body>
